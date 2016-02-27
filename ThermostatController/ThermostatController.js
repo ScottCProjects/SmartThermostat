@@ -60,37 +60,40 @@ Hardware.prototype.setRelayMode = function(mode) {
 
 var hardware = new Hardware();
 
-// Set defaults
-var minTemp = 60;
-var maxTemp = 90;
+// Load defaults
+var settings = {
+	"minTemp": 60,
+	"maxTemp": 90,
+	"acEnabled": true,
+	"heaterEnabled":true
+}
 hardware.setRelayMode(RelayMode.off);
 
 //=============== MAIN ===============
 
 function getStatus() {
 	return {
-		"mode": hardware.getRelayMode(),
+		"hwMode": hardware.getRelayMode(),
 		"currentTemp": hardware.getCurrentTemp(),
-		"minTemp": minTemp,
-		"maxTemp": maxTemp
+		"settings": settings
 	}
 }
 
 function tempIsTooLow() {
-	return hardware.getCurrentTemp() < minTemp;
+	return hardware.getCurrentTemp() < settings.minTemp;
 }
 function tempIsTooHigh() {
-	return hardware.getCurrentTemp() > maxTemp;
+	return hardware.getCurrentTemp() > settings.maxTemp;
 }
 
 function update() {
-	var currentMode = hardware.getRelayMode();
-	console.log( new Date().toLocaleString()
+	var hwMode = hardware.getRelayMode();
+	console.log( "\n" + new Date().toLocaleString()
 			+ "\nTemp: " + hardware.getCurrentTemp());
 
 	// Heater Mode
-	if(tempIsTooLow()) {
-		if(currentMode != RelayMode.heat) {
+	if(tempIsTooLow() && settings.heaterEnabled) {
+		if(hwMode != RelayMode.heat) {
 			console.log("Too cold. Turning on AC.");
 			hardware.setRelayMode(RelayMode.heat);
 		} else {
@@ -98,8 +101,8 @@ function update() {
 		}
 
 	// AC Mode
-	} else if(tempIsTooHigh()) {
-		if(currentMode != RelayMode.cool) {
+	} else if(tempIsTooHigh() && thermoMode.acEnabled) {
+		if(hwMode != RelayMode.cool) {
 			console.log("Too hot. Turning on heater.");
 			hardware.setRelayMode(RelayMode.cool);
 		} else {
@@ -108,14 +111,14 @@ function update() {
 
 	// Off
 	} else {
-		if(currentMode != RelayMode.off) {
+		if(hwMode != RelayMode.off) {
 			console.log("Perfect! Turning off.");
 			hardware.setRelayMode(RelayMode.off);
 		} else {
 			console.log("Still perfect."
 					+ "\nMode: " + hardware.getRelayMode()
-					+ "\nMinTemp: " + minTemp
-					+ "\nMaxTemp: " + maxTemp);
+					+ "\nMinTemp: " + settings.minTemp
+					+ "\nMaxTemp: " + settings.maxTemp);
 		}
 	}
 
@@ -139,11 +142,11 @@ ThermostatController.post('/setTemp', function( req, res ){
 	var temp = req.body.temp;
 
 	if(mode == RelayMode.cool) {
-		maxTemp = temp;
+		settings.maxTemp = temp;
 		res.end("success");
 		return;
 	} else if(mode == RelayMode.heat) {
-		minTemp = temp;
+		settings.minTemp = temp;
 		res.end("success");
 		return;
 	}
@@ -158,4 +161,5 @@ if(portToListen == null) {
 }
 ThermostatController.listen(portToListen, "0.0.0.0");
 console.log('ThermostatController listening on ' + portToListen);
+console.log('Status: ' + JSON.stringify(getStatus(), null, "\t") );
 exports = module.exports = ThermostatController;
