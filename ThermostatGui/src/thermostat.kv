@@ -1,0 +1,14 @@
+#:kivy 1.0.9
+
+<Thermostat>:
+	button: button1
+	canvas:
+		Rectangle:
+			pos: 0, 0
+			size: self.width, self.height
+			Color:
+				rgb: 1, 0, 1
+
+	Button:
+		id: button1
+		center: self.parent.center
